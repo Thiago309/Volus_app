@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 import 'home_screen.dart';
 import 'agenda_screen.dart';
+import 'package:volus_app/features/profile/presentation/screens/profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -18,7 +19,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const HomeScreen(),
     const AgendaScreen(),
     const _PlaceholderScreen(title: 'Escala'),
-    const _PlaceholderScreen(title: 'Perfil'),
+    const ProfileScreen(),
   ];
 
   @override
