@@ -26,6 +26,23 @@ void main() {
     // 5. Verify that we successfully loaded the AgendaScreen
     expect(find.text('Resumo das Atividades'), findsOneWidget);
 
+    // 5.1. Tap the 'Escala' tab on BottomNavigationBar to go to EscalaScreen
+    await tester.tap(find.byIcon(Icons.leaderboard_outlined));
+    await tester.pumpAndSettle();
+
+    // 5.2. Verify that we loaded the EscalaScreen in pending state
+    expect(find.text('Comunidade Esperança'), findsOneWidget);
+    expect(find.text('Construção'), findsOneWidget);
+    expect(find.text('Sua Confirmação'), findsOneWidget);
+
+    // 5.3. Tap 'Vou comparecer' to confirm presence
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Vou comparecer'));
+    await tester.pumpAndSettle();
+
+    // 5.4. Verify empty state is shown
+    expect(find.text('Não há nenhuma escala pendente'), findsOneWidget);
+    expect(find.text('Comunidade Esperança'), findsNothing);
+
     // 6. Tap the 'Perfil' tab on BottomNavigationBar to go to ProfileScreen
     await tester.tap(find.byIcon(Icons.person_outline));
     await tester.pumpAndSettle();

@@ -4,6 +4,7 @@ import 'package:volus_app/core/theme/teto_colors.dart';
 import 'home_screen.dart';
 import 'agenda_screen.dart';
 import 'package:volus_app/features/profile/presentation/screens/profile_screen.dart';
+import 'package:volus_app/features/escala/presentation/screens/escala_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -18,7 +19,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const AgendaScreen(),
-    const _PlaceholderScreen(title: 'Escala'),
+    const EscalaScreen(),
     const ProfileScreen(),
   ];
 
