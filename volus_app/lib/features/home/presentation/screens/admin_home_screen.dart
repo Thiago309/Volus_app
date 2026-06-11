@@ -16,8 +16,9 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   late final TextEditingController _familiesController;
 
   double _campaignValue = 45000.0;
-  final double _campaignTarget = 50000.0;
+  double _campaignTarget = 50000.0;
   bool _isEditingCampaign = false;
+  late final TextEditingController _campaignTargetController;
 
   String _formatCurrency(double val) {
     final integerPart = val.toInt();
@@ -34,11 +35,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   void initState() {
     super.initState();
     _familiesController = TextEditingController(text: _assistedFamilies.toString());
+    _campaignTargetController = TextEditingController(text: (_campaignTarget.toInt() ~/ 1000).toString());
   }
 
   @override
   void dispose() {
     _familiesController.dispose();
+    _campaignTargetController.dispose();
     super.dispose();
   }
 
@@ -392,7 +395,20 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               GestureDetector(
                 onTap: () {
                   setState(() {
-                    _isEditingCampaign = !_isEditingCampaign;
+                    if (_isEditingCampaign) {
+                      final parsedTarget = double.tryParse(_campaignTargetController.text);
+                      if (parsedTarget != null && parsedTarget > 0) {
+                        _campaignTarget = parsedTarget * 1000.0;
+                      } else {
+                        _campaignTargetController.text = (_campaignTarget.toInt() ~/ 1000).toString();
+                      }
+                      if (_campaignValue > _campaignTarget) {
+                        _campaignValue = _campaignTarget;
+                      }
+                      _isEditingCampaign = false;
+                    } else {
+                      _isEditingCampaign = true;
+                    }
                   });
                 },
                 child: Icon(
@@ -415,14 +431,53 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                'de R\$ 50k',
-                style: GoogleFonts.inter(
-                  color: TetoColors.textMuted,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              _isEditingCampaign
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'de R\$ ',
+                          style: GoogleFonts.inter(
+                            color: TetoColors.textMuted,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 32,
+                          child: TextField(
+                            controller: _campaignTargetController,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.inter(
+                              color: TetoColors.textDark,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            decoration: const InputDecoration(
+                              contentPadding: EdgeInsets.zero,
+                              isDense: true,
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          'k',
+                          style: GoogleFonts.inter(
+                            color: TetoColors.textMuted,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Text(
+                      'de R\$ ${(_campaignTarget.toInt() ~/ 1000)}k',
+                      style: GoogleFonts.inter(
+                        color: TetoColors.textMuted,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
             ],
           ),
           const SizedBox(height: 12),
