@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:volus_app/features/home/presentation/screens/main_navigation_screen.dart';
+import 'package:volus_app/features/home/presentation/screens/admin_navigation_screen.dart';
 import '../../../../core/theme/teto_colors.dart';
 
 enum UserRole { volunteer, admin }
@@ -325,7 +326,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const MainNavigationScreen(),
+                                    builder: (context) => _selectedRole == UserRole.volunteer
+                                        ? const MainNavigationScreen()
+                                        : const AdminNavigationScreen(),
                                   ),
                                 );
                               }

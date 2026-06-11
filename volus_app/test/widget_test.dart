@@ -137,4 +137,65 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Não há nenhuma escala pendente'), findsOneWidget);
   });
+
+  testWidgets('Admin flow: login as administrator, verify cards, approve testimonial, and check navigation tabs', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    // 1. Verify we are on login screen
+    expect(find.text('Plataforma do Voluntário'), findsOneWidget);
+
+    // 2. Tap the 'Administrador' role tab to switch role
+    await tester.tap(find.text('Administrador'));
+    await tester.pumpAndSettle();
+
+    // 3. Tap the 'Entrar' button
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Entrar'));
+    await tester.pumpAndSettle();
+
+    // 4. Verify we are on the Painel Administrativo screen
+    expect(find.text('Painel Administrativo'), findsOneWidget);
+    expect(find.text('Bem-vindo, Admin'), findsOneWidget);
+
+    // 5. Verify quick actions and cards
+    expect(find.text('Adicionar\nProjeto'), findsOneWidget);
+    expect(find.text('Postar Aviso'), findsOneWidget);
+    expect(find.text('Impacto este Mês'), findsOneWidget);
+    expect(find.text('Meta da Campanha'), findsOneWidget);
+    expect(find.text('Avisos Urgentes'), findsOneWidget);
+    expect(find.text('Depoimentos Pendentes'), findsOneWidget);
+    expect(find.text('Projetos Ativos'), findsOneWidget);
+    expect(find.text('Gerenciar Galeria'), findsOneWidget);
+
+    // 6. Verify pending testimonials are visible
+    expect(find.text('Maria Oliveira'), findsOneWidget);
+    expect(find.text('Carlos Santos'), findsOneWidget);
+
+    // 7. Approve the first testimonial (Maria Oliveira)
+    final checkIcon = find.byIcon(Icons.check).first;
+    await tester.ensureVisible(checkIcon);
+    await tester.pumpAndSettle();
+    await tester.tap(checkIcon);
+    await tester.pumpAndSettle();
+
+    // Verify Maria Oliveira is no longer in the list (or at least approved notification snackbar popped up)
+    expect(find.text('Depoimento de Maria Oliveira aprovado!'), findsOneWidget);
+    expect(find.text('Maria Oliveira'), findsNothing);
+    expect(find.text('Carlos Santos'), findsOneWidget);
+
+    // 8. Navigation check
+    // Agenda
+    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Resumo das Atividades'), findsOneWidget);
+
+    // Escala
+    await tester.tap(find.byIcon(Icons.leaderboard_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Comunidade Esperança'), findsOneWidget);
+
+    // Perfil
+    await tester.tap(find.byIcon(Icons.person_outline));
+    await tester.pumpAndSettle();
+    expect(find.text('Meu Perfil'), findsOneWidget);
+  });
 }
