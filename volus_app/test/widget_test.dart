@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:volus_app/main.dart';
+import 'package:volus_app/features/home/presentation/screens/depoimentos_pendentes_screen.dart';
 
 void main() {
   testWidgets('Full flow: login, dashboard navigation, profile check, and logout', (WidgetTester tester) async {
@@ -181,6 +182,36 @@ void main() {
     expect(find.text('Depoimento de Maria Oliveira aprovado!'), findsOneWidget);
     expect(find.text('Maria Oliveira'), findsNothing);
     expect(find.text('Carlos Santos'), findsOneWidget);
+
+    // Test 'Ver Todos' redirection and moderation
+    final verTodos = find.text('Ver Todos');
+    await tester.ensureVisible(verTodos);
+    await tester.tap(verTodos);
+    await tester.pumpAndSettle();
+
+    // Verify we are on the new screen and Carlos Santos is there
+    expect(find.text('Carlos Santos'), findsOneWidget);
+
+    // Approve Carlos Santos on the new screen
+    final newCheckIcon = find.descendant(
+      of: find.byType(DepoimentosPendentesScreen),
+      matching: find.byIcon(Icons.check),
+    ).first;
+    await tester.ensureVisible(newCheckIcon);
+    await tester.pumpAndSettle();
+    await tester.tap(newCheckIcon);
+    await tester.pumpAndSettle();
+
+    // Verify Carlos Santos is approved and removed from the list
+    expect(find.text('Depoimento de Carlos Santos aprovado!'), findsOneWidget);
+    expect(find.text('Carlos Santos'), findsNothing);
+
+    // Return to the main screen
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    // Verify we are back on AdminHomeScreen and no testimonials remain
+    expect(find.text('Nenhum depoimento pendente!'), findsOneWidget);
 
     // 8. Navigation check
     // Agenda

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 import 'package:volus_app/features/home/presentation/widgets/teto_drawer.dart';
+import 'depoimentos_pendentes_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -19,6 +20,21 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   double _campaignTarget = 50000.0;
   bool _isEditingCampaign = false;
   late final TextEditingController _campaignTargetController;
+
+  List<Map<String, dynamic>> _urgentAlerts = [
+    {
+      'id': '1',
+      'title': 'Alerta Meteorológico: Checagem de Ferramentas',
+      'description': 'Certifique-se de que todas as lonas estão presas para a construção do fim de semana.',
+      'isCritical': true,
+    },
+    {
+      'id': '2',
+      'title': 'Reunião Reagendada',
+      'description': 'Reunião com líderes comunitários alterada para as 14:00.',
+      'isCritical': false,
+    },
+  ];
 
   String _formatCurrency(double val) {
     final integerPart = val.toInt();
@@ -548,73 +564,161 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   ),
                 ],
               ),
-              const Icon(Icons.add, color: TetoColors.primaryBlue, size: 24),
+              IconButton(
+                icon: const Icon(Icons.add, color: TetoColors.primaryBlue, size: 24),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      String title = '';
+                      String description = '';
+                      bool isCritical = false;
+                      return StatefulBuilder(
+                        builder: (context, setDialogState) {
+                          return AlertDialog(
+                            title: Text(
+                              'Novo Aviso Urgente',
+                              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+                            ),
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextField(
+                                  decoration: const InputDecoration(labelText: 'Título'),
+                                  onChanged: (val) => title = val,
+                                ),
+                                const SizedBox(height: 12),
+                                TextField(
+                                  decoration: const InputDecoration(labelText: 'Descrição'),
+                                  onChanged: (val) => description = val,
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Checkbox(
+                                      value: isCritical,
+                                      activeColor: const Color(0xFFC53030),
+                                      onChanged: (val) {
+                                        setDialogState(() {
+                                          isCritical = val ?? false;
+                                        });
+                                      },
+                                    ),
+                                    Text('Marcar como Crítico', style: GoogleFonts.inter()),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text('Cancelar', style: GoogleFonts.inter(color: TetoColors.textMuted)),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: TetoColors.primaryBlue,
+                                  foregroundColor: Colors.white,
+                                ),
+                                onPressed: () {
+                                  if (title.isNotEmpty && description.isNotEmpty) {
+                                    setState(() {
+                                      _urgentAlerts.add({
+                                        'id': DateTime.now().millisecondsSinceEpoch.toString(),
+                                        'title': title,
+                                        'description': description,
+                                        'isCritical': isCritical,
+                                      });
+                                    });
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                child: Text('Adicionar', style: GoogleFonts.inter()),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          // Sub-card 1: Meteorológico
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFCA5A5)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Alerta Meteorológico: Checagem de Ferramentas',
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF991B1B),
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
+          if (_urgentAlerts.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Center(
+                child: Text(
+                  'Nenhum aviso urgente no momento.',
+                  style: GoogleFonts.inter(color: TetoColors.textMuted, fontSize: 14),
+                ),
+              ),
+            )
+          else
+            ..._urgentAlerts.map((alert) {
+              final isCritical = alert['isCritical'] as bool;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: isCritical ? const Color(0xFFFEF2F2) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isCritical ? const Color(0xFFFCA5A5) : TetoColors.borderSide,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(right: 32.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              alert['title']!,
+                              style: GoogleFonts.inter(
+                                color: isCritical ? const Color(0xFF991B1B) : TetoColors.textDark,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              alert['description']!,
+                              style: GoogleFonts.inter(
+                                color: isCritical ? const Color(0xFF7F1D1D) : TetoColors.textMuted,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _urgentAlerts.removeWhere((item) => item['id'] == alert['id']);
+                            });
+                          },
+                          child: Icon(
+                            Icons.close,
+                            color: isCritical ? const Color(0xFF991B1B) : TetoColors.textMuted,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Certifique-se de que todas as lonas estão presas para a construção do fim de semana.',
-                  style: GoogleFonts.inter(
-                    color: const Color(0xFF7F1D1D),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Sub-card 2: Reunião
-          Container(
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: TetoColors.borderSide),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Reunião Reagendada',
-                  style: GoogleFonts.inter(
-                    color: TetoColors.textDark,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Reunião com líderes comunitários alterada para as 14:00.',
-                  style: GoogleFonts.inter(
-                    color: TetoColors.textMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+              );
+            }),
         ],
       ),
     );
@@ -642,12 +746,29 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                'Ver Todos',
-                style: GoogleFonts.inter(
-                  color: TetoColors.textLink,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DepoimentosPendentesScreen(
+                        pendingTestimonials: _pendingTestimonials,
+                        onApprove: (id) {
+                          setState(() {
+                            _pendingTestimonials.removeWhere((item) => item['id'] == id);
+                          });
+                        },
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Ver Todos',
+                  style: GoogleFonts.inter(
+                    color: TetoColors.textLink,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -723,6 +844,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                                 setState(() {
                                   _pendingTestimonials.removeWhere((item) => item['id'] == t['id']);
                                 });
+                                ScaffoldMessenger.of(context).clearSnackBars();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
