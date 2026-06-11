@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 import '../widgets/teto_drawer.dart';
+import 'projetos_ativos_screen.dart';
+import 'main_navigation_screen.dart';
+import 'galeria_recente_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -241,12 +244,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: TetoColors.textDark,
                     ),
                   ),
-                  Text(
-                    'Ver todos',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: TetoColors.textLink,
+                  GestureDetector(
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProjetosAtivosScreen(),
+                        ),
+                      );
+                      if (result == 'go_to_escala') {
+                        if (mounted) {
+                          context.findAncestorStateOfType<MainNavigationScreenState>()?.setIndex(2);
+                        }
+                      }
+                    },
+                    child: Text(
+                      'Ver todos',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: TetoColors.textLink,
+                      ),
                     ),
                   ),
                 ],
@@ -400,12 +418,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: TetoColors.textDark,
                     ),
                   ),
-                  Text(
-                    'Ver todas',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: TetoColors.textLink,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const GaleriaRecenteScreen(),
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'Ver todas',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: TetoColors.textLink,
+                      ),
                     ),
                   ),
                 ],
