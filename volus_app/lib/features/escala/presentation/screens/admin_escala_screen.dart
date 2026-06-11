@@ -75,6 +75,61 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
     ];
   }
 
+  Future<void> _selectDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2024, 5, 25),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: TetoColors.primaryBlue,
+              onPrimary: Colors.white,
+              onSurface: TetoColors.textDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        final day = picked.day.toString().padLeft(2, '0');
+        final month = picked.month.toString().padLeft(2, '0');
+        final year = picked.year;
+        _eventDateController.text = '$day/$month/$year';
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: const TimeOfDay(hour: 8, minute: 0),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: TetoColors.primaryBlue,
+              onPrimary: Colors.white,
+              onSurface: TetoColors.textDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() {
+        final hour = picked.hour.toString().padLeft(2, '0');
+        final minute = picked.minute.toString().padLeft(2, '0');
+        _eventTimeController.text = '$hour:$minute';
+      });
+    }
+  }
+
   @override
   void dispose() {
     _eventNameController.dispose();
@@ -241,31 +296,13 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Page Header
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, color: TetoColors.textDark, size: 28),
-                    onPressed: () {
-                      final navState = context.findAncestorStateOfType<AdminNavigationScreenState>();
-                      if (navState != null) {
-                        navState.setIndex(0);
-                      } else {
-                        Navigator.maybePop(context);
-                      }
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Gerenciar Escala',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: TetoColors.textDark,
-                    ),
-                  ),
-                ],
+              Text(
+                'Gerenciar Escala',
+                style: GoogleFonts.inter(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: TetoColors.textDark,
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -430,12 +467,17 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildEventField('Nome do Evento', _eventNameController),
+                    _buildEventField(
+                      'Nome do Evento',
+                      _eventNameController,
+                      readOnly: false,
+                    ),
                     const SizedBox(height: 16),
                     _buildEventField(
                       'Local do Evento',
                       _eventLocationController,
                       suffixIcon: Icons.location_on_outlined,
+                      readOnly: false,
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -445,6 +487,8 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
                             'Data',
                             _eventDateController,
                             suffixIcon: Icons.calendar_today_outlined,
+                            readOnly: true,
+                            onTap: _selectDate,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -453,6 +497,8 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
                             'Hora',
                             _eventTimeController,
                             suffixIcon: Icons.access_time_outlined,
+                            readOnly: true,
+                            onTap: _selectTime,
                           ),
                         ),
                       ],
@@ -614,7 +660,13 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
     );
   }
 
-  Widget _buildEventField(String label, TextEditingController controller, {IconData? suffixIcon}) {
+  Widget _buildEventField(
+    String label,
+    TextEditingController controller, {
+    IconData? suffixIcon,
+    bool readOnly = false,
+    VoidCallback? onTap,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -629,7 +681,8 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          readOnly: true,
+          readOnly: readOnly,
+          onTap: onTap,
           style: GoogleFonts.inter(
             fontSize: 14,
             fontWeight: FontWeight.w500,
@@ -638,7 +691,7 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
           decoration: InputDecoration(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             filled: true,
-            fillColor: const Color(0xFFF1F5F9).withOpacity(0.6),
+            fillColor: readOnly && onTap == null ? const Color(0xFFF1F5F9).withOpacity(0.6) : Colors.white,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: TetoColors.borderSide.withOpacity(0.8)),
@@ -647,7 +700,20 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: TetoColors.borderSide.withOpacity(0.8)),
             ),
-            suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: TetoColors.textDark, size: 20) : null,
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: TetoColors.primaryBlue, width: 1.5),
+            ),
+            suffixIcon: suffixIcon != null
+                ? (onTap != null
+                    ? IconButton(
+                        icon: Icon(suffixIcon, color: TetoColors.textDark, size: 20),
+                        onPressed: onTap,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      )
+                    : Icon(suffixIcon, color: TetoColors.textDark, size: 20))
+                : null,
           ),
         ),
       ],
