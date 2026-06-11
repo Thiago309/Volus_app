@@ -36,6 +36,21 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     },
   ];
 
+  List<Map<String, dynamic>> _activeProjects = [
+    {
+      'id': '1',
+      'name': 'Vila Esperança Build',
+      'location': 'São Paulo, SP',
+      'status': 'Em Andamento',
+    },
+    {
+      'id': '2',
+      'name': 'Jardim Angela Survey',
+      'location': 'São Paulo, SP',
+      'status': 'Planejamento',
+    },
+  ];
+
   String _formatCurrency(double val) {
     final integerPart = val.toInt();
     if (integerPart >= 1000) {
@@ -910,6 +925,109 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
+  Map<String, Color> _getStatusColors(String status) {
+    switch (status) {
+      case 'Em Andamento':
+        return {
+          'bg': const Color(0xFFDCFCE7),
+          'text': const Color(0xFF166534),
+        };
+      case 'Planejamento':
+        return {
+          'bg': const Color(0xFFE0E7FF),
+          'text': const Color(0xFF3730A3),
+        };
+      case 'Captação de Recursos':
+        return {
+          'bg': const Color(0xFFFEF3C7),
+          'text': const Color(0xFFD97706),
+        };
+      case 'Concluído':
+      default:
+        return {
+          'bg': const Color(0xFFF1F5F9),
+          'text': const Color(0xFF475569),
+        };
+    }
+  }
+
+  void _showEditProjectDialog(Map<String, dynamic> project) {
+    final nameController = TextEditingController(text: project['name']);
+    final locationController = TextEditingController(text: project['location']);
+    String selectedStatus = project['status'];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(
+                'Editar Projeto',
+                style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(labelText: 'Nome do Projeto'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: locationController,
+                    decoration: const InputDecoration(labelText: 'Localização'),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedStatus,
+                    decoration: const InputDecoration(labelText: 'Status'),
+                    items: const [
+                      DropdownMenuItem(value: 'Em Andamento', child: Text('Em Andamento')),
+                      DropdownMenuItem(value: 'Planejamento', child: Text('Planejamento')),
+                      DropdownMenuItem(value: 'Captação de Recursos', child: Text('Captação de Recursos')),
+                      DropdownMenuItem(value: 'Concluído', child: Text('Concluído')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setDialogState(() {
+                          selectedStatus = val;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancelar', style: GoogleFonts.inter(color: TetoColors.textMuted)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: TetoColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    if (nameController.text.isNotEmpty && locationController.text.isNotEmpty) {
+                      setState(() {
+                        project['name'] = nameController.text;
+                        project['location'] = locationController.text;
+                        project['status'] = selectedStatus;
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text('Salvar', style: GoogleFonts.inter()),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildActiveProjectsCard() {
     return Container(
       padding: const EdgeInsets.all(20.0),
@@ -993,128 +1111,78 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
           const Divider(height: 24, color: TetoColors.borderSide),
 
-          // Project Row 1: Vila Esperança
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                flex: 4,
-                child: Text(
-                  'Vila Esperança\nBuild',
-                  style: GoogleFonts.inter(
-                    color: TetoColors.textDark,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 4,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Dynamic Projects List
+          ..._activeProjects.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final project = entry.value;
+            final colors = _getStatusColors(project['status']!);
+            
+            return Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'São Paulo, SP',
-                      style: GoogleFonts.inter(
-                        color: TetoColors.textMuted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
+                    Expanded(
+                      flex: 4,
+                      child: Text(
+                        project['name']!,
+                        style: GoogleFonts.inter(
+                          color: TetoColors.textDark,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(6.0),
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            project['location']!,
+                            style: GoogleFonts.inter(
+                              color: TetoColors.textMuted,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colors['bg'],
+                              borderRadius: BorderRadius.circular(6.0),
+                            ),
+                            child: Text(
+                              project['status']!,
+                              style: GoogleFonts.inter(
+                                color: colors['text'],
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        'Em Andamento',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF166534),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    Expanded(
+                      flex: 2,
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          onPressed: () => _showEditProjectDialog(project),
+                          icon: const Icon(Icons.mode_edit_outlined, color: TetoColors.textMuted, size: 20),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.mode_edit_outlined, color: TetoColors.textMuted, size: 20),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Project Row 2: Jardim Angela
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                flex: 4,
-                child: Text(
-                  'Jardim Angela\nSurvey',
-                  style: GoogleFonts.inter(
-                    color: TetoColors.textDark,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 4,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'São Paulo, SP',
-                      style: GoogleFonts.inter(
-                        color: TetoColors.textMuted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0E7FF),
-                        borderRadius: BorderRadius.circular(6.0),
-                      ),
-                      child: Text(
-                        'Planejamento',
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF3730A3),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.mode_edit_outlined, color: TetoColors.textMuted, size: 20),
-                  ),
-                ),
-              ),
-            ],
-          ),
+                if (idx < _activeProjects.length - 1)
+                  const SizedBox(height: 16),
+              ],
+            );
+          }),
         ],
       ),
     );
