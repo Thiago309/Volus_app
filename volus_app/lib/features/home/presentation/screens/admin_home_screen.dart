@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 import 'package:volus_app/features/home/presentation/widgets/teto_drawer.dart';
 import 'depoimentos_pendentes_screen.dart';
+import 'package:volus_app/core/data/gallery_data.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -1188,6 +1189,165 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 
+  void _showAddPhotoDialog() {
+    final urlController = TextEditingController();
+    final tagController = TextEditingController();
+    final titleController = TextEditingController();
+    final subtitleController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Adicionar Foto à Galeria',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'URL da Imagem',
+                    hintText: 'https://...',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: tagController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tag (ex: Outubro 2023)',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Título',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: subtitleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Legenda/Subtítulo (Opcional)',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar', style: GoogleFonts.inter(color: TetoColors.textMuted)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TetoColors.primaryBlue,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                if (urlController.text.isNotEmpty &&
+                    tagController.text.isNotEmpty &&
+                    titleController.text.isNotEmpty) {
+                  setState(() {
+                    GalleryData.photos.add({
+                      'imageUrl': urlController.text,
+                      'tag': tagController.text,
+                      'title': titleController.text,
+                      if (subtitleController.text.isNotEmpty)
+                        'subtitle': subtitleController.text,
+                      'tagColor': '0xFF082366',
+                    });
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('Adicionar', style: GoogleFonts.inter()),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditPhotoDialog(Map<String, String> photo, int index) {
+    final urlController = TextEditingController(text: photo['imageUrl']);
+    final tagController = TextEditingController(text: photo['tag']);
+    final titleController = TextEditingController(text: photo['title']);
+    final subtitleController = TextEditingController(text: photo['subtitle'] ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Editar Foto da Galeria',
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: urlController,
+                  decoration: const InputDecoration(labelText: 'URL da Imagem'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: tagController,
+                  decoration: const InputDecoration(labelText: 'Tag'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Título'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: subtitleController,
+                  decoration: const InputDecoration(labelText: 'Legenda/Subtítulo (Opcional)'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancelar', style: GoogleFonts.inter(color: TetoColors.textMuted)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TetoColors.primaryBlue,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                if (urlController.text.isNotEmpty &&
+                    tagController.text.isNotEmpty &&
+                    titleController.text.isNotEmpty) {
+                  setState(() {
+                    GalleryData.photos[index] = {
+                      'imageUrl': urlController.text,
+                      'tag': tagController.text,
+                      'title': titleController.text,
+                      if (subtitleController.text.isNotEmpty)
+                        'subtitle': subtitleController.text,
+                      'tagColor': photo['tagColor'] ?? '0xFF082366',
+                    };
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: Text('Salvar', style: GoogleFonts.inter()),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildManageGalleryCard() {
     return Container(
       padding: const EdgeInsets.all(20.0),
@@ -1216,7 +1376,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  onPressed: () {},
+                  onPressed: _showAddPhotoDialog,
                   icon: const Icon(Icons.add, color: Colors.white, size: 18),
                   padding: const EdgeInsets.all(6),
                   constraints: const BoxConstraints(),
@@ -1225,42 +1385,123 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          // Grid layout of images
-          Row(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=350',
-                    height: 140,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 140,
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.broken_image, color: Colors.grey),
-                    ),
-                  ),
+          if (GalleryData.photos.isEmpty)
+            Container(
+              height: 140,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: TetoColors.borderSide),
+              ),
+              child: Center(
+                child: Text(
+                  'Nenhuma foto na galeria no momento.',
+                  style: GoogleFonts.inter(color: TetoColors.textMuted),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=350',
-                    height: 140,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 140,
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.broken_image, color: Colors.grey),
+            )
+          else
+            SizedBox(
+              height: 140,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: GalleryData.photos.length,
+                itemBuilder: (context, index) {
+                  final photo = GalleryData.photos[index];
+                  return Container(
+                    width: 140,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.network(
+                            photo['imageUrl']!,
+                            height: 140,
+                            width: 140,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              height: 140,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.broken_image, color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                        // Dark overlay for action icons readability
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              gradient: LinearGradient(
+                                colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                            ),
+                          ),
+                        ),
+                        // Action buttons (edit, delete)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Row(
+                            children: [
+                              GestureDetector(
+                                onTap: () => _showEditPhotoDialog(photo, index),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.mode_edit_outlined,
+                                    size: 14,
+                                    color: TetoColors.primaryBlue,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    GalleryData.photos.removeAt(index);
+                                  });
+                                  ScaffoldMessenger.of(context).clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Foto removida com sucesso!',
+                                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                      ),
+                                      backgroundColor: TetoColors.primaryGreen,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete_outline,
+                                    size: 14,
+                                    color: Color(0xFFDC2626),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
-            ],
-          ),
+            ),
         ],
       ),
     );

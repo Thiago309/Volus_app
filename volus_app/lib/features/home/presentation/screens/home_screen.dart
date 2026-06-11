@@ -5,6 +5,7 @@ import '../widgets/teto_drawer.dart';
 import 'projetos_ativos_screen.dart';
 import 'main_navigation_screen.dart';
 import 'galeria_recente_screen.dart';
+import 'package:volus_app/core/data/gallery_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -441,37 +442,49 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
 
               // Image Gallery Grid (Row of two Expanded items)
-              Row(
+               Row(
                 children: [
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=350',
-                        height: 140,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          height: 140,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.image_outlined, color: Colors.grey),
-                        ),
-                      ),
+                      child: GalleryData.photos.isNotEmpty
+                          ? Image.network(
+                              GalleryData.photos[0]['imageUrl']!,
+                              height: 140,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                height: 140,
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.image_outlined, color: Colors.grey),
+                              ),
+                            )
+                          : Container(
+                              height: 140,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.image_outlined, color: Colors.grey),
+                            ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=350',
-                        height: 140,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          height: 140,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.image_outlined, color: Colors.grey),
-                        ),
-                      ),
+                      child: GalleryData.photos.length > 1
+                          ? Image.network(
+                              GalleryData.photos[1]['imageUrl']!,
+                              height: 140,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                height: 140,
+                                color: Colors.grey.shade200,
+                                child: const Icon(Icons.image_outlined, color: Colors.grey),
+                              ),
+                            )
+                          : Container(
+                              height: 140,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.image_outlined, color: Colors.grey),
+                            ),
                     ),
                   ),
                 ],
