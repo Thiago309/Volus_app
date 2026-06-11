@@ -222,7 +222,13 @@ void main() {
     // Escala
     await tester.tap(find.byIcon(Icons.leaderboard_outlined));
     await tester.pumpAndSettle();
-    expect(find.text('Comunidade Esperança'), findsOneWidget);
+    expect(find.text('Gerenciar Escala'), findsOneWidget);
+    expect(find.text('Concluir escala e Notificar voluntários'), findsOneWidget);
+    expect(find.text('Gerar escalas automaticamente'), findsOneWidget);
+    expect(find.text('Escala de Voluntários (5)'), findsOneWidget);
+    expect(find.text('Ana Clara Souza'), findsOneWidget);
+    expect(find.text('Detalhes do Evento'), findsOneWidget);
+    expect(find.text('Construção Comunitária - Vila Nova'), findsOneWidget);
 
     // Perfil
     await tester.tap(find.byIcon(Icons.person_outline));

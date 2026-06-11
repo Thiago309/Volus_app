@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 import 'home_screen.dart';
 import 'agenda_screen.dart';
-import 'package:volus_app/features/escala/presentation/screens/escala_screen.dart';
+import 'package:volus_app/features/escala/presentation/screens/admin_escala_screen.dart';
 import 'package:volus_app/features/profile/presentation/screens/profile_screen.dart';
 import 'admin_home_screen.dart';
 
@@ -26,7 +26,7 @@ class AdminNavigationScreenState extends State<AdminNavigationScreen> {
   final List<Widget> _screens = [
     const AdminHomeScreen(),
     const AgendaScreen(),
-    const EscalaScreen(),
+    const AdminEscalaScreen(),
     const ProfileScreen(),
   ];
 
