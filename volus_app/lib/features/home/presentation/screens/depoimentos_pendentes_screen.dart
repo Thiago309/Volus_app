@@ -5,11 +5,13 @@ import 'package:volus_app/core/theme/teto_colors.dart';
 class DepoimentosPendentesScreen extends StatefulWidget {
   final List<Map<String, String>> pendingTestimonials;
   final Function(String) onApprove;
+  final Function(String) onReject;
 
   const DepoimentosPendentesScreen({
     super.key,
     required this.pendingTestimonials,
     required this.onApprove,
+    required this.onReject,
   });
 
   @override
@@ -178,10 +180,26 @@ class _DepoimentosPendentesScreenState extends State<DepoimentosPendentesScreen>
                             ),
                             const SizedBox(height: 8),
                             IconButton(
-                              onPressed: () {},
-                              icon: const Icon(Icons.mode_edit_outlined, color: TetoColors.textMuted, size: 20),
+                              onPressed: () {
+                                widget.onReject(t['id']!);
+                                setState(() {
+                                  _localTestimonials.removeAt(index);
+                                });
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Depoimento de ${t['name']} rejeitado!',
+                                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                    ),
+                                    backgroundColor: const Color(0xFFDC2626),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.close, color: Color(0xFFDC2626), size: 20),
                               style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFFF1F5F9),
+                                backgroundColor: const Color(0xFFFEE2E2),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8.0),
                                 ),

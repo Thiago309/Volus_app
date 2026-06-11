@@ -758,6 +758,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                             _pendingTestimonials.removeWhere((item) => item['id'] == id);
                           });
                         },
+                        onReject: (id) {
+                          setState(() {
+                            _pendingTestimonials.removeWhere((item) => item['id'] == id);
+                          });
+                        },
                       ),
                     ),
                   );
@@ -866,12 +871,27 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Edit button
+                            // Reject button
                             IconButton(
-                              onPressed: () {},
-                              icon: const Icon(Icons.mode_edit_outlined, color: TetoColors.textMuted, size: 18),
+                              onPressed: () {
+                                setState(() {
+                                  _pendingTestimonials.removeWhere((item) => item['id'] == t['id']);
+                                });
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Depoimento de ${t['name']} rejeitado!',
+                                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                    ),
+                                    backgroundColor: const Color(0xFFDC2626),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.close, color: Color(0xFFDC2626), size: 18),
                               style: IconButton.styleFrom(
-                                backgroundColor: const Color(0xFFF1F5F9),
+                                backgroundColor: const Color(0xFFFEE2E2),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(6.0),
                                 ),
