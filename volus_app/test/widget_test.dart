@@ -214,11 +214,6 @@ void main() {
     expect(find.text('Nenhum depoimento pendente!'), findsOneWidget);
 
     // 8. Navigation check
-    // Agenda
-    await tester.tap(find.byIcon(Icons.calendar_month_outlined));
-    await tester.pumpAndSettle();
-    expect(find.text('Resumo das Atividades'), findsOneWidget);
-
     // Escala
     await tester.tap(find.byIcon(Icons.leaderboard_outlined));
     await tester.pumpAndSettle();

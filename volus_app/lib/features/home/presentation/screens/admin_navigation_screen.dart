@@ -25,7 +25,6 @@ class AdminNavigationScreenState extends State<AdminNavigationScreen> {
 
   final List<Widget> _screens = [
     const AdminHomeScreen(),
-    const AgendaScreen(),
     const AdminEscalaScreen(),
     const AdminProfileScreen(),
   ];
@@ -33,9 +32,11 @@ class AdminNavigationScreenState extends State<AdminNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      body: SafeArea(
+        child: IndexedStack(
+          index: _currentIndex,
+          children: _screens,
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -69,10 +70,6 @@ class AdminNavigationScreenState extends State<AdminNavigationScreen> {
             BottomNavigationBarItem(
               icon: Icon(Icons.home_filled),
               label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_month_outlined),
-              label: 'Agenda',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.leaderboard_outlined),
