@@ -4,7 +4,7 @@ import 'package:volus_app/core/theme/teto_colors.dart';
 import 'home_screen.dart';
 import 'agenda_screen.dart';
 import 'package:volus_app/features/escala/presentation/screens/admin_escala_screen.dart';
-import 'package:volus_app/features/profile/presentation/screens/profile_screen.dart';
+import 'package:volus_app/features/profile/presentation/screens/admin_profile_screen.dart';
 import 'admin_home_screen.dart';
 
 class AdminNavigationScreen extends StatefulWidget {
@@ -27,7 +27,7 @@ class AdminNavigationScreenState extends State<AdminNavigationScreen> {
     const AdminHomeScreen(),
     const AgendaScreen(),
     const AdminEscalaScreen(),
-    const ProfileScreen(),
+    const AdminProfileScreen(),
   ];
 
   @override

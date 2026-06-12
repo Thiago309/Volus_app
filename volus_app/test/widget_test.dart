@@ -233,6 +233,51 @@ void main() {
     // Perfil
     await tester.tap(find.byIcon(Icons.person_outline));
     await tester.pumpAndSettle();
-    expect(find.text('Meu Perfil'), findsOneWidget);
+    expect(find.text('Perfil Administrador'), findsOneWidget);
+    expect(find.text('Ricardo Mendes'), findsOneWidget);
+    expect(find.text('Coordenador Geral - Núcleo SP'), findsOneWidget);
+    expect(find.text('Voluntários sob gestão'), findsOneWidget);
+    expect(find.text('Projetos Ativos'), findsOneWidget);
+    final gerenciarCard = find.text('Gerenciar Usuários');
+    await tester.ensureVisible(gerenciarCard);
+    await tester.pumpAndSettle();
+    await tester.tap(gerenciarCard);
+    await tester.pumpAndSettle();
+    expect(find.text('Pesquisar voluntários...'), findsOneWidget);
+    expect(find.text('João Silva'), findsOneWidget);
+
+    // Tap on João Silva to view details
+    await tester.tap(find.text('João Silva'));
+    await tester.pumpAndSettle();
+
+    // Verify volunteer details
+    expect(find.text('Perfil do Voluntário'), findsOneWidget);
+    expect(find.text('João Silva'), findsOneWidget);
+    expect(find.text('Voluntário - Núcleo SP'), findsOneWidget);
+    expect(find.text('Termo de Voluntariado: Ativo'), findsOneWidget);
+    expect(find.text('***.456.789-**'), findsOneWidget);
+    expect(find.text('28 anos'), findsOneWidget);
+    expect(find.text('15/08/1995'), findsOneWidget);
+    expect(find.text('São Paulo, SP'), findsOneWidget);
+
+    // Go back to Gerenciar Usuários
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    // Go back to Perfil Administrador
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ricardo.mendes@teto.org.br'), findsOneWidget);
+
+    // Logout
+    final logoutButton = find.widgetWithText(OutlinedButton, 'Sair da Conta');
+    await tester.ensureVisible(logoutButton);
+    await tester.pumpAndSettle();
+    await tester.tap(logoutButton);
+    await tester.pumpAndSettle();
+
+    // Verify back to login
+    expect(find.text('Plataforma do Voluntário'), findsOneWidget);
   });
 }
