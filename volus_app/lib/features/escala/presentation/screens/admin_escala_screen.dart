@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 import 'package:volus_app/features/home/presentation/screens/admin_navigation_screen.dart';
+import 'package:volus_app/core/services/supabase_service.dart';
 
 enum VolunteerScaleStatus {
   requestedSwap, // Orange dot
@@ -20,7 +21,9 @@ class AdminEscalaScreen extends StatefulWidget {
 
 class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
   // Hardcoded volunteer scale list matching prototype
-  late List<Map<String, dynamic>> _volunteers;
+  List<Map<String, dynamic>> _volunteers = [];
+  bool _isLoading = false;
+  String? _eventId;
 
   // Controllers for event details
   late final TextEditingController _eventNameController;
@@ -36,6 +39,7 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
     _eventDateController = TextEditingController(text: '25/05/2024');
     _eventTimeController = TextEditingController(text: '08:00');
 
+    // Default mock lists as initial fallback
     _volunteers = [
       {
         'id': '1',
@@ -73,6 +77,102 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
         'status': VolunteerScaleStatus.present,
       },
     ];
+
+    _loadEscalas();
+  }
+
+  Future<void> _loadEscalas() async {
+    setState(() => _isLoading = true);
+    try {
+      final dbEscalas = await SupabaseService.getEscalas();
+      
+      if (dbEscalas.isNotEmpty) {
+        // Escalas já existem no banco - carregar dados reais
+        final firstEscala = dbEscalas.first;
+        final eventData = firstEscala['events'] as Map<String, dynamic>? ?? {};
+        final evId = eventData['id']?.toString();
+        final evTitle = eventData['title'] ?? 'Construção Comunitária - Vila Nova';
+        final evLocation = eventData['location'] ?? 'Comunidade Vila Nova, Setor B';
+        final evDateStr = eventData['event_date'] ?? '2024-05-25';
+        
+        String formattedDate = '25/05/2024';
+        if (evDateStr.contains('-')) {
+          final parts = evDateStr.split('-');
+          if (parts.length == 3) {
+            formattedDate = '${parts[2]}/${parts[1]}/${parts[0]}';
+          }
+        }
+        
+        final evTime = eventData['start_time'] ?? '08:00';
+        
+        _eventId = evId;
+        _eventNameController.text = evTitle;
+        _eventLocationController.text = evLocation;
+        _eventDateController.text = formattedDate;
+        _eventTimeController.text = evTime;
+
+        final mappedVolunteers = dbEscalas.map((e) {
+          final volunteerData = e['users'] as Map<String, dynamic>? ?? {};
+          final name = volunteerData['name'] ?? 'Voluntário';
+          final initial = name.isNotEmpty ? name[0].toUpperCase() : 'V';
+          final secondInitial = name.split(' ').length > 1 && name.split(' ')[1].isNotEmpty ? name.split(' ')[1][0].toUpperCase() : '';
+          final initials = '$initial$secondInitial';
+          
+          final dbStatus = e['status'] ?? 'pendente';
+          VolunteerScaleStatus status = VolunteerScaleStatus.notNotified;
+          if (dbStatus == 'confirmado') {
+            status = VolunteerScaleStatus.confirmed;
+          } else if (dbStatus == 'presente') {
+            status = VolunteerScaleStatus.present;
+          } else if (dbStatus == 'indisponivel') {
+            status = VolunteerScaleStatus.unavailable;
+          } else if (dbStatus == 'troca_solicitada') {
+            status = VolunteerScaleStatus.requestedSwap;
+          }
+          
+          return {
+            'id': e['id'].toString(),
+            'user_id': volunteerData['id']?.toString() ?? '',
+            'name': name,
+            'role': volunteerData['nucleus'] ?? 'Voluntário',
+            'initials': initials,
+            'status': status,
+          };
+        }).toList();
+
+        setState(() {
+          _volunteers = mappedVolunteers;
+        });
+      } else {
+        // Escalas vazia - buscar voluntários da tabela users para exibição
+        final dbUsers = await SupabaseService.getVolunteers();
+        if (dbUsers.isNotEmpty) {
+          final mappedUsers = dbUsers.map((u) {
+            final name = u['name'] ?? 'Voluntário';
+            final initial = name.isNotEmpty ? name[0].toUpperCase() : 'V';
+            final secondInitial = name.split(' ').length > 1 && name.split(' ')[1].isNotEmpty ? name.split(' ')[1][0].toUpperCase() : '';
+            final initials = '$initial$secondInitial';
+            
+            return {
+              'id': u['id'].toString(),
+              'user_id': u['id'].toString(),
+              'name': name,
+              'role': u['nucleus'] ?? 'Voluntário',
+              'initials': initials,
+              'status': VolunteerScaleStatus.notNotified,
+            };
+          }).toList();
+          setState(() {
+            _volunteers = mappedUsers;
+          });
+        }
+        // Sem evento vinculado: _eventId permanece null
+      }
+    } catch (e) {
+      debugPrint('Erro ao buscar escalas do Supabase: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _selectDate() async {
@@ -193,26 +293,44 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
           color: TetoColors.textDark,
         ),
       ),
-      onTap: () {
-        setState(() {
-          volunteer['status'] = status;
-          if (status == VolunteerScaleStatus.unavailable) {
-            volunteer['role'] = 'Avisou indisponibilidade';
-          } else if (volunteer['role'] == 'Avisou indisponibilidade') {
-            volunteer['role'] = 'Construção'; // fallback to a role
-          }
-        });
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Status de ${volunteer['name']} alterado para "$label"',
-              style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+      onTap: () async {
+        String dbStatus = 'pendente';
+        if (status == VolunteerScaleStatus.present) {
+          dbStatus = 'presente';
+        } else if (status == VolunteerScaleStatus.confirmed) {
+          dbStatus = 'confirmado';
+        } else if (status == VolunteerScaleStatus.requestedSwap) {
+          dbStatus = 'troca_solicitada';
+        } else if (status == VolunteerScaleStatus.unavailable) {
+          dbStatus = 'indisponivel';
+        }
+
+        final success = await SupabaseService.updateEscalaStatus(volunteer['id']!, dbStatus);
+
+        if (success) {
+          setState(() {
+            volunteer['status'] = status;
+            if (status == VolunteerScaleStatus.unavailable) {
+              volunteer['role'] = 'Avisou indisponibilidade';
+            } else if (volunteer['role'] == 'Avisou indisponibilidade') {
+              volunteer['role'] = 'Construção';
+            }
+          });
+        }
+        
+        if (context.mounted) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Status de ${volunteer['name']} alterado para "$label"',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+              ),
+              backgroundColor: TetoColors.primaryBlue,
+              behavior: SnackBarBehavior.floating,
             ),
-            backgroundColor: TetoColors.primaryBlue,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+          );
+        }
       },
     );
   }
@@ -308,17 +426,60 @@ class _AdminEscalaScreenState extends State<AdminEscalaScreen> {
 
               // Action button 1: Concluir escala
               ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'Escala concluída! Voluntários notificados por e-mail e push.',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                onPressed: () async {
+                  setState(() => _isLoading = true);
+                  bool success = false;
+                  
+                  try {
+                    if (_eventId == null) {
+                      // CASO 1: Escala nova - criar evento e inserir voluntários
+                      final newEventId = await SupabaseService.createEvent(
+                        title: _eventNameController.text,
+                        location: _eventLocationController.text,
+                        date: _eventDateController.text,
+                        time: _eventTimeController.text,
+                      );
+                      
+                      if (newEventId != null && _volunteers.isNotEmpty) {
+                        success = await SupabaseService.insertEscalas(
+                          eventId: newEventId,
+                          volunteers: _volunteers,
+                        );
+                        _eventId = newEventId;
+                      }
+                    } else {
+                      // CASO 2: Escala existente - atualizar evento e confirmar pendentes
+                      await SupabaseService.updateEvent(
+                        id: _eventId!,
+                        title: _eventNameController.text,
+                        location: _eventLocationController.text,
+                        date: _eventDateController.text,
+                        time: _eventTimeController.text,
+                      );
+                      
+                      success = await SupabaseService.finalizeScale(_eventId!);
+                    }
+                    
+                    // Recarregar dados do banco
+                    await _loadEscalas();
+                  } catch (e) {
+                    debugPrint('Erro ao concluir escala: $e');
+                  }
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'Escala concluída! Voluntários inseridos e notificados.'
+                              : 'Escala concluída! Voluntários notificados por e-mail e push.',
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                        ),
+                        backgroundColor: TetoColors.primaryBlue,
+                        behavior: SnackBarBehavior.floating,
                       ),
-                      backgroundColor: TetoColors.primaryBlue,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: TetoColors.primaryBlue,

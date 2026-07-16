@@ -4,6 +4,7 @@ import 'package:volus_app/core/theme/teto_colors.dart';
 import 'package:volus_app/features/home/presentation/widgets/teto_drawer.dart';
 import 'depoimentos_pendentes_screen.dart';
 import 'package:volus_app/core/data/gallery_data.dart';
+import 'package:volus_app/core/services/supabase_service.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -21,36 +22,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   double _campaignTarget = 50000.0;
   bool _isEditingCampaign = false;
   late final TextEditingController _campaignTargetController;
+  bool _isLoading = false;
 
-  List<Map<String, dynamic>> _urgentAlerts = [
-    {
-      'id': '1',
-      'title': 'Alerta Meteorológico: Checagem de Ferramentas',
-      'description': 'Certifique-se de que todas as lonas estão presas para a construção do fim de semana.',
-      'isCritical': true,
-    },
-    {
-      'id': '2',
-      'title': 'Reunião Reagendada',
-      'description': 'Reunião com líderes comunitários alterada para as 14:00.',
-      'isCritical': false,
-    },
-  ];
-
-  List<Map<String, dynamic>> _activeProjects = [
-    {
-      'id': '1',
-      'name': 'Vila Esperança Build',
-      'location': 'São Paulo, SP',
-      'status': 'Em Andamento',
-    },
-    {
-      'id': '2',
-      'name': 'Jardim Angela Survey',
-      'location': 'São Paulo, SP',
-      'status': 'Planejamento',
-    },
-  ];
+  List<Map<String, dynamic>> _urgentAlerts = [];
+  List<Map<String, dynamic>> _activeProjects = [];
+  List<Map<String, String>> _pendingTestimonials = [];
 
   String _formatCurrency(double val) {
     final integerPart = val.toInt();
@@ -68,6 +44,93 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     super.initState();
     _familiesController = TextEditingController(text: _assistedFamilies.toString());
     _campaignTargetController = TextEditingController(text: (_campaignTarget.toInt() ~/ 1000).toString());
+    _loadDatabaseData();
+  }
+
+  Future<void> _loadDatabaseData() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // 1. Depoimentos Pendentes
+      final dbTestimonials = await SupabaseService.getPendingTestimonials();
+      final List<Map<String, String>> mappedTestimonials = dbTestimonials.map<Map<String, String>>((t) {
+        final name = t['author_name'] ?? 'Voluntário';
+        final initial = name.isNotEmpty ? name[0].toUpperCase() : 'V';
+        final isEven = initial.codeUnitAt(0) % 2 == 0;
+        return {
+          'id': t['id'].toString(),
+          'initial': initial,
+          'name': name,
+          'text': t['content'] ?? '',
+          'avatarBg': isEven ? '0xFFE0F2FE' : '0xFFF1EFFB',
+          'avatarText': isEven ? '0xFF0369A1' : '0xFF4A3E8D',
+        };
+      }).toList();
+
+      // 2. Projetos Ativos
+      final dbProjects = await SupabaseService.getProjects();
+      final mappedProjects = dbProjects.map((p) {
+        return {
+          'id': p['id'].toString(),
+          'name': p['title'] ?? '',
+          'location': p['location'] ?? '',
+          'status': p['status'] == 'em_andamento'
+              ? 'Em Andamento'
+              : p['status'] == 'planejamento'
+                  ? 'Planejamento'
+                  : 'Captação',
+        };
+      }).toList();
+
+      // 3. Avisos Urgentes
+      final dbAnnouncements = await SupabaseService.getAnnouncements();
+      final mappedAnnouncements = dbAnnouncements.map((a) {
+        return {
+          'id': a['id'].toString(),
+          'title': a['title'] ?? '',
+          'description': a['description'] ?? '',
+          'isCritical': a['priority'] == 'alta',
+        };
+      }).toList();
+
+      setState(() {
+        _pendingTestimonials = mappedTestimonials;
+        
+        _activeProjects = mappedProjects.isNotEmpty ? mappedProjects : [
+          {
+            'id': '1',
+            'name': 'Vila Esperança Build',
+            'location': 'São Paulo, SP',
+            'status': 'Em Andamento',
+          },
+          {
+            'id': '2',
+            'name': 'Jardim Angela Survey',
+            'location': 'São Paulo, SP',
+            'status': 'Planejamento',
+          },
+        ];
+
+        _urgentAlerts = mappedAnnouncements.isNotEmpty ? mappedAnnouncements : [
+          {
+            'id': '1',
+            'title': 'Alerta Meteorológico: Checagem de Ferramentas',
+            'description': 'Certifique-se de que todas as lonas estão presas para a construção do fim de semana.',
+            'isCritical': true,
+          },
+          {
+            'id': '2',
+            'title': 'Reunião Reagendada',
+            'description': 'Reunião com líderes comunitários alterada para as 14:00.',
+            'isCritical': false,
+          },
+        ];
+      });
+    } catch (e) {
+      debugPrint('Erro ao carregar dados do banco: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -76,26 +139,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     _campaignTargetController.dispose();
     super.dispose();
   }
-
-  // Testimonials list with interactive approval
-  List<Map<String, String>> _pendingTestimonials = [
-    {
-      'id': '1',
-      'initial': 'M',
-      'name': 'Maria Oliveira',
-      'text': '"O novo centro comunit..."',
-      'avatarBg': '0xFFE0F2FE',
-      'avatarText': '0xFF0369A1',
-    },
-    {
-      'id': '2',
-      'initial': 'C',
-      'name': 'Carlos Santos',
-      'text': '"Ser voluntário aqui me d..."',
-      'avatarBg': '0xFFF1EFFB',
-      'avatarText': '0xFF4A3E8D',
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -637,17 +680,27 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                                   backgroundColor: TetoColors.primaryBlue,
                                   foregroundColor: Colors.white,
                                 ),
-                                onPressed: () {
+                                onPressed: () async {
                                   if (title.isNotEmpty && description.isNotEmpty) {
-                                    setState(() {
-                                      _urgentAlerts.add({
-                                        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-                                        'title': title,
-                                        'description': description,
-                                        'isCritical': isCritical,
+                                    final dbAnnouncement = await SupabaseService.createAnnouncement(
+                                      title: title,
+                                      description: description,
+                                      priority: isCritical ? 'alta' : 'media',
+                                    );
+                                    
+                                    if (dbAnnouncement != null) {
+                                      setState(() {
+                                        _urgentAlerts.insert(0, {
+                                          'id': dbAnnouncement['id'].toString(),
+                                          'title': dbAnnouncement['title'],
+                                          'description': dbAnnouncement['description'],
+                                          'isCritical': dbAnnouncement['priority'] == 'alta',
+                                        });
                                       });
-                                    });
-                                    Navigator.pop(context);
+                                    }
+                                    if (context.mounted) {
+                                      Navigator.pop(context);
+                                    }
                                   }
                                 },
                                 child: Text('Adicionar', style: GoogleFonts.inter()),
@@ -718,10 +771,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                         right: 0,
                         top: 0,
                         child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _urgentAlerts.removeWhere((item) => item['id'] == alert['id']);
-                            });
+                          onTap: () async {
+                            final success = await SupabaseService.deleteAnnouncement(alert['id']!);
+                            if (success) {
+                              setState(() {
+                                _urgentAlerts.removeWhere((item) => item['id'] == alert['id']);
+                              });
+                            }
                           },
                           child: Icon(
                             Icons.close,
@@ -770,11 +826,13 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                       builder: (context) => DepoimentosPendentesScreen(
                         pendingTestimonials: _pendingTestimonials,
                         onApprove: (id) {
+                          SupabaseService.updateTestimonialStatus(id, 'aprovado');
                           setState(() {
                             _pendingTestimonials.removeWhere((item) => item['id'] == id);
                           });
                         },
                         onReject: (id) {
+                          SupabaseService.updateTestimonialStatus(id, 'rejeitado');
                           setState(() {
                             _pendingTestimonials.removeWhere((item) => item['id'] == id);
                           });
@@ -862,6 +920,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                             // Approved button
                             IconButton(
                               onPressed: () {
+                                SupabaseService.updateTestimonialStatus(t['id']!, 'aprovado');
                                 setState(() {
                                   _pendingTestimonials.removeWhere((item) => item['id'] == t['id']);
                                 });
@@ -890,6 +949,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                             // Reject button
                             IconButton(
                               onPressed: () {
+                                SupabaseService.updateTestimonialStatus(t['id']!, 'rejeitado');
                                 setState(() {
                                   _pendingTestimonials.removeWhere((item) => item['id'] == t['id']);
                                 });
@@ -1009,14 +1069,35 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                     backgroundColor: TetoColors.primaryBlue,
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: () {
+                  onPressed: () async {
                     if (nameController.text.isNotEmpty && locationController.text.isNotEmpty) {
-                      setState(() {
-                        project['name'] = nameController.text;
-                        project['location'] = locationController.text;
-                        project['status'] = selectedStatus;
-                      });
-                      Navigator.pop(context);
+                      String dbStatus = 'em_andamento';
+                      if (selectedStatus == 'Planejamento') {
+                        dbStatus = 'planejamento';
+                      } else if (selectedStatus == 'Captação de Recursos' || selectedStatus == 'Captação') {
+                        dbStatus = 'captacao';
+                      } else if (selectedStatus == 'Concluído') {
+                        dbStatus = 'concluido';
+                      }
+
+                      final success = await SupabaseService.updateProject(
+                        id: project['id']!,
+                        title: nameController.text,
+                        location: locationController.text,
+                        status: dbStatus,
+                      );
+
+                      if (success) {
+                        setState(() {
+                          project['name'] = nameController.text;
+                          project['location'] = locationController.text;
+                          project['status'] = selectedStatus;
+                        });
+                      }
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
                     }
                   },
                   child: Text('Salvar', style: GoogleFonts.inter()),

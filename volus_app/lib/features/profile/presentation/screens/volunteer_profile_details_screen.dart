@@ -3,10 +3,63 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 
 class VolunteerProfileDetailsScreen extends StatelessWidget {
-  const VolunteerProfileDetailsScreen({super.key});
+  final Map<String, dynamic> volunteerData;
+
+  const VolunteerProfileDetailsScreen({
+    super.key,
+    required this.volunteerData,
+  });
+
+  String _formatBirthDate(String rawDate) {
+    if (rawDate.isEmpty) return 'Não informado';
+    // Format from yyyy-MM-dd to dd/MM/yyyy
+    if (rawDate.contains('-')) {
+      final parts = rawDate.split('-');
+      if (parts.length == 3) {
+        return '${parts[2]}/${parts[1]}/${parts[0]}';
+      }
+    }
+    return rawDate;
+  }
+
+  String _maskCpf(String cpf) {
+    if (cpf.isEmpty) return 'Não informado';
+    // Mask middle digits: ***.456.789-**
+    if (cpf.length >= 11) {
+      final clean = cpf.replaceAll(RegExp(r'[^0-9]'), '');
+      if (clean.length >= 11) {
+        return '***. ${clean.substring(3, 6)}.${clean.substring(6, 9)}-**';
+      }
+    }
+    return cpf;
+  }
+
+  String _calculateAge(String rawDate) {
+    if (rawDate.isEmpty) return 'Não informado';
+    try {
+      final date = DateTime.parse(rawDate);
+      final now = DateTime.now();
+      int age = now.year - date.year;
+      if (now.month < date.month || (now.month == date.month && now.day < date.day)) {
+        age--;
+      }
+      return '$age anos';
+    } catch (_) {
+      return 'Não informado';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final name = volunteerData['name'] ?? 'Voluntário';
+    final role = volunteerData['role'] ?? 'Voluntário';
+    final cpf = volunteerData['cpf'] ?? '';
+    final birthDate = volunteerData['birth_date'] ?? '';
+    final emergencyContact = volunteerData['emergency_contact'] ?? '';
+    final photoUrl = volunteerData['photo_url'] ?? '';
+    final isAvailable = volunteerData['is_available'] ?? true;
+    final nucleus = volunteerData['nucleus'] ?? 'Núcleo SP';
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -67,20 +120,18 @@ class VolunteerProfileDetailsScreen extends StatelessWidget {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(50),
-                        child: Image.network(
-                          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: TetoColors.primaryBlue,
-                          ),
-                        ),
+                        child: photoUrl.isNotEmpty
+                            ? Image.network(
+                                photoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _buildAvatarFallback(name),
+                              )
+                            : _buildAvatarFallback(name),
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'João Silva',
+                      name,
                       style: GoogleFonts.inter(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -97,37 +148,40 @@ class VolunteerProfileDetailsScreen extends StatelessWidget {
                           size: 18,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          'Voluntário - Núcleo SP',
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: TetoColors.textMuted,
+                        Flexible(
+                          child: Text(
+                            role,
+                            style: GoogleFonts.inter(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: TetoColors.textMuted,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Term active badge
+                    // Availability badge
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE6F4EA),
+                        color: isAvailable ? const Color(0xFFE6F4EA) : const Color(0xFFFFF1F1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(
-                            Icons.check_circle,
-                            color: Color(0xFF137333),
+                          Icon(
+                            isAvailable ? Icons.check_circle : Icons.cancel,
+                            color: isAvailable ? const Color(0xFF137333) : const Color(0xFF991B1B),
                             size: 16,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Termo de Voluntariado: Ativo',
+                            isAvailable ? 'Disponível para Escalas' : 'Indisponível',
                             style: GoogleFonts.inter(
-                              color: const Color(0xFF137333),
+                              color: isAvailable ? const Color(0xFF137333) : const Color(0xFF991B1B),
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
@@ -145,9 +199,10 @@ class VolunteerProfileDetailsScreen extends StatelessWidget {
                 title: 'Informações Pessoais',
                 icon: Icons.person_outline,
                 rows: [
-                  _buildDetailRow('CPF', '***.456.789-**'),
-                  _buildDetailRow('Idade', '28 anos'),
-                  _buildDetailRow('Data de Nascimento', '15/08/1995'),
+                  _buildDetailRow('CPF', _maskCpf(cpf)),
+                  _buildDetailRow('Idade', _calculateAge(birthDate)),
+                  _buildDetailRow('Data de Nascimento', _formatBirthDate(birthDate)),
+                  _buildDetailRow('Núcleo', nucleus),
                 ],
               ),
               const SizedBox(height: 20),
@@ -157,16 +212,36 @@ class VolunteerProfileDetailsScreen extends StatelessWidget {
                 title: 'Contato e Localização',
                 icon: Icons.contact_mail_outlined,
                 rows: [
-                  _buildDetailRow('Localização', 'São Paulo, SP', icon: Icons.location_on_outlined),
+                  _buildDetailRow(
+                    'E-mail',
+                    volunteerData['email'] ?? 'Não informado',
+                    icon: Icons.email_outlined,
+                  ),
                   _buildDetailRow(
                     'Contato de Emergência',
-                    '(11) 98765-4321\nMãe',
+                    emergencyContact.isNotEmpty ? emergencyContact : 'Não informado',
                     icon: Icons.phone_outlined,
                   ),
                 ],
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatarFallback(String name) {
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'V';
+    return Container(
+      color: TetoColors.primaryBlue.withOpacity(0.1),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: GoogleFonts.inter(
+          fontSize: 36,
+          fontWeight: FontWeight.bold,
+          color: TetoColors.primaryBlue,
         ),
       ),
     );

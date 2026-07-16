@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 
+import 'package:volus_app/core/services/supabase_service.dart';
+
 class ProjetosAtivosScreen extends StatefulWidget {
   const ProjetosAtivosScreen({super.key});
 
@@ -11,30 +13,71 @@ class ProjetosAtivosScreen extends StatefulWidget {
 
 class _ProjetosAtivosScreenState extends State<ProjetosAtivosScreen> {
   String _selectedCategory = 'Todos';
+  bool _isLoading = false;
 
-  final List<Map<String, dynamic>> _projects = [
-    {
-      'title': 'Construção de Banheiros Sustentáveis',
-      'location': 'Comunidade Vila Nova',
-      'category': 'Em andamento',
-      'imageUrl': 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=500',
-      'progress': 65,
-    },
-    {
-      'title': 'Reforma da Sede Comunitária',
-      'location': 'Jardim Esperança',
-      'category': 'Planejamento',
-      'imageUrl': 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500',
-      'startDate': '15 Outubro',
-    },
-    {
-      'title': 'Coleta Nacional nas Ruas',
-      'location': 'Múltiplas Cidades',
-      'category': 'Captação de Recursos',
-      'imageUrl': 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=500',
-      'financialProgress': 30,
-    },
-  ];
+  List<Map<String, dynamic>> _projects = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProjects();
+  }
+
+  Future<void> _loadProjects() async {
+    setState(() => _isLoading = true);
+    try {
+      final dbProjects = await SupabaseService.getProjects();
+      final mappedProjects = dbProjects.map((p) {
+        final status = p['status'] ?? 'em_andamento';
+        String categoryName = 'Em andamento';
+        if (status == 'planejamento') {
+          categoryName = 'Planejamento';
+        } else if (status == 'captacao') {
+          categoryName = 'Captação de Recursos';
+        }
+        
+        return {
+          'title': p['title'] ?? 'Sem título',
+          'location': p['location'] ?? 'Sem local',
+          'category': categoryName,
+          'imageUrl': p['image_url'] ?? 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=500',
+          'progress': p['progress_percentage'] ?? 0,
+          'startDate': p['start_date'] != null ? p['start_date'].toString() : null,
+          'financialProgress': p['progress_percentage'] ?? 0,
+        };
+      }).toList();
+
+      setState(() {
+        _projects = mappedProjects.isNotEmpty ? mappedProjects : [
+          {
+            'title': 'Construção de Banheiros Sustentáveis',
+            'location': 'Comunidade Vila Nova',
+            'category': 'Em andamento',
+            'imageUrl': 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=500',
+            'progress': 65,
+          },
+          {
+            'title': 'Reforma da Sede Comunitária',
+            'location': 'Jardim Esperança',
+            'category': 'Planejamento',
+            'imageUrl': 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500',
+            'startDate': '15 Outubro',
+          },
+          {
+            'title': 'Coleta Nacional nas Ruas',
+            'location': 'Múltiplas Cidades',
+            'category': 'Captação de Recursos',
+            'imageUrl': 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=500',
+            'financialProgress': 30,
+          },
+        ];
+      });
+    } catch (e) {
+      debugPrint('Erro ao buscar projetos do banco: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +143,13 @@ class _ProjetosAtivosScreenState extends State<ProjetosAtivosScreen> {
                   height: 1.4,
                 ),
               ),
+              if (_isLoading) ...[
+                const SizedBox(height: 16),
+                const LinearProgressIndicator(
+                  color: TetoColors.primaryBlue,
+                  backgroundColor: Color(0xFFF1EFFB),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Filter Chips
