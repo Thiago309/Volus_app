@@ -1,9 +1,24 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:volus_app/core/config/app_config.dart';
 import 'package:volus_app/core/theme/teto_colors.dart';
 import 'package:volus_app/features/auth/presentation/screens/login_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  try {
+    if (AppConfig.supabaseUrl.startsWith('http')) {
+      await Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        anonKey: AppConfig.supabaseAnonKey,
+      );
+    }
+  } catch (e) {
+    debugPrint('Aviso: Supabase não inicializado ou chaves de API pendentes. $e');
+  }
+
   runApp(const MyApp());
 }
 

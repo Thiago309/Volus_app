@@ -1,0 +1,18 @@
+TOKEN=$(curl -s https://hub.docker.com/v2/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{"identifier":"thiagov309","secret":"dckr_pat_25pQm05eNNgWT9zNu4cnRmUxO8I"}' \
+  | jq -r '.access_token')
+
+
+
+
+
+  curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"appservice-demo","is_private":false}' \
+  https://hub.docker.com/v2/repositories/thiagov309/
+
+
+
+  echo "dckr_pat_25pQm05eNNgWT9zNu4cnRmUxO8I" | docker login -u thiagov309
