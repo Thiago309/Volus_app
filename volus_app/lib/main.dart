@@ -14,6 +14,11 @@ void main() async {
         url: AppConfig.supabaseUrl,
         anonKey: AppConfig.supabaseAnonKey,
       );
+      
+      // Teste de conexão rápida no log
+      final data = await Supabase.instance.client.from('projects').select();
+      debugPrint('🎉 BANCO DE DADOS CONECTADO COM SUCESSO!');
+      debugPrint('Projetos cadastrados no Supabase: ${data.length}');
     }
   } catch (e) {
     debugPrint('Aviso: Supabase não inicializado ou chaves de API pendentes. $e');
