@@ -97,14 +97,15 @@ CREATE POLICY "Acesso total publico announcements" ON public.announcements FOR A
 -- DADOS INICIAIS DE EXEMPLO (SEEDS)
 -- ========================================================
 
--- Inserir Usuários
-INSERT INTO public.users (name, email, role, nucleus, is_available) VALUES
-('João Silva', 'joao.silva@teto.org', 'voluntario', 'Núcleo SP', true),
-('Ricardo Mendes', 'ricardo.mendes@teto.org', 'admin', 'Núcleo SP (Coordenador)', true),
-('Ana Clara Souza', 'ana.clara@teto.org', 'voluntario', 'Núcleo SP', true),
-('Bruno Martins', 'bruno.martins@teto.org', 'voluntario', 'Núcleo SP', true),
-('Camila Ribeiro', 'camila.ribeiro@teto.org', 'voluntario', 'Núcleo SP', false),
-('Diego Fernandes', 'diego.fernandes@teto.org', 'voluntario', 'Núcleo SP', true)
+-- Inserir Usuários (Garantindo UUIDs estáticos para relacionamentos previsíveis)
+INSERT INTO public.users (id, name, email, role, nucleus, is_available) VALUES
+('b8d145e6-71d5-45d2-b0e6-efd37651a1e0', 'João Silva', 'joao.silva@teto.org', 'voluntario', 'Núcleo SP', true),
+('f1903e1e-cb01-4475-8025-a83a48e7ea51', 'Ricardo Mendes', 'ricardo.mendes@teto.org', 'admin', 'Núcleo SP (Coordenador)', true),
+('a2f58e1c-5d07-4228-a6d1-efd58129a001', 'Ana Clara Souza', 'ana.clara@teto.org', 'voluntario', 'Logística', true),
+('c860c210-91a1-4328-98e6-bca81d9e503b', 'Bruno Martins', 'bruno.martins@teto.org', 'voluntario', 'Construção', true),
+('d2994f1c-eb1a-4712-88fb-bca8dcd9e99a', 'Camila Ribeiro', 'camila.ribeiro@teto.org', 'voluntario', 'Alimentação', false),
+('e98dcf4a-289e-4e4b-9721-cdaef189eb81', 'Diego Fernandes', 'diego.fernandes@teto.org', 'voluntario', 'Construção', true)
+ON CONFLICT (id) DO NOTHING
 ON CONFLICT (email) DO NOTHING;
 
 -- Inserir Projetos Ativos
@@ -114,9 +115,18 @@ INSERT INTO public.projects (title, category, status, location, progress_percent
 ('Coleta Nacional nas Ruas', 'captacao', 'captacao', 'São Paulo - Centro', 30, 50000, 15000, '2024-06-01')
 ON CONFLICT DO NOTHING;
 
--- Inserir Evento e Escala de Teste
+-- Inserir Evento Padrão de Escala
 INSERT INTO public.events (id, title, category, location, event_date, start_time, end_time, description) VALUES
-('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Construção Comunitária - Vila Nova', 'Construção', 'Zona Sul, São Paulo', '2024-11-15', '08:00', '18:00', 'Ação presencial de construção de moradias emergenciais.')
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'Construção Comunitária - Vila Nova', 'construcao', 'Comunidade Vila Nova, Setor B', '2024-05-25', '08:00', '17:00', 'Ação presencial de construção de moradias emergenciais.')
+ON CONFLICT (id) DO NOTHING;
+
+-- Inserir Escalas de Voluntários Iniciais Vinculadas ao Evento e Usuários Estáticos
+INSERT INTO public.escalas (event_id, volunteer_id, status, swap_requested) VALUES
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'b8d145e6-71d5-45d2-b0e6-efd37651a1e0', 'confirmado', false),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'a2f58e1c-5d07-4228-a6d1-efd58129a001', 'presente', false),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'c860c210-91a1-4328-98e6-bca81d9e503b', 'confirmado', false),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'd2994f1c-eb1a-4712-88fb-bca8dcd9e99a', 'indisponivel', false),
+('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'e98dcf4a-289e-4e4b-9721-cdaef189eb81', 'troca_solicitada', true)
 ON CONFLICT DO NOTHING;
 
 -- Inserir Depoimentos Iniciais

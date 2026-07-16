@@ -295,7 +295,6 @@ class SupabaseService {
       final response = await _client
           .from('users')
           .select()
-          .eq('role', 'voluntario')
           .order('name', ascending: true);
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
