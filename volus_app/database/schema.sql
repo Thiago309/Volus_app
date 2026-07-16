@@ -105,8 +105,7 @@ INSERT INTO public.users (id, name, email, role, nucleus, is_available) VALUES
 ('c860c210-91a1-4328-98e6-bca81d9e503b', 'Bruno Martins', 'bruno.martins@teto.org', 'voluntario', 'Construção', true),
 ('d2994f1c-eb1a-4712-88fb-bca8dcd9e99a', 'Camila Ribeiro', 'camila.ribeiro@teto.org', 'voluntario', 'Alimentação', false),
 ('e98dcf4a-289e-4e4b-9721-cdaef189eb81', 'Diego Fernandes', 'diego.fernandes@teto.org', 'voluntario', 'Construção', true)
-ON CONFLICT (id) DO NOTHING
-ON CONFLICT (email) DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
 
 -- Inserir Projetos Ativos
 INSERT INTO public.projects (title, category, status, location, progress_percentage, target_amount, raised_amount, start_date) VALUES
