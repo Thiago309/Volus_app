@@ -1,0 +1,5 @@
+# 1. Constrói a imagem a partir do diretório atual
+docker build -t volusapp-img:cli-aws-terraform .
+
+# 2. Cria o container mapeando a pasta pai (..), que contém tanto o app quanto a pasta terraform
+docker run -dit --name cli-aws-terraform -v $(pwd)/..:/volus_app volusapp-img:cli-aws-terraform /bin/bash
